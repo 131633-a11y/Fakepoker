@@ -1,1 +1,1 @@
-Its a cool fake poker site
+NEW UPDATE! FIXED THE UI AFTER ONE F MONTH
