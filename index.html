@@ -1,545 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071b19">
+<title>Velvet — Texas Hold'em</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{color-scheme:dark;--mint:#8fffe0;--mint2:#35d6ae;--glass:rgba(255,255,255,.075);--line:rgba(255,255,255,.13);--muted:#9bb7b0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#061412;color:#eefbf7;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+body:before,body:after{content:"";position:fixed;inset:auto;pointer-events:none;filter:blur(80px);opacity:.28;z-index:-1;border-radius:50%}
+body:before{width:45vw;height:45vw;background:#0c8e70;top:-18vw;left:-10vw}
+body:after{width:40vw;height:40vw;background:#284fbd;right:-12vw;bottom:-15vw}
+.glass{background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.035));border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 20px 60px rgba(0,0,0,.22);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(4,17,15,.68);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08)}
+.brandmark{width:35px;height:35px;border-radius:12px;background:linear-gradient(145deg,#b5ffe9,#28bd98);display:grid;place-items:center;color:#06362a;font-weight:900;box-shadow:0 0 28px #42e7b433}
+.eyebrow{font-size:.68rem;text-transform:uppercase;letter-spacing:.16em;color:#9bb7b0;font-weight:750}
+.metric{font-size:clamp(1rem,2vw,1.4rem);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.table-wrap{position:relative;overflow:hidden;border-radius:32px;border:1px solid rgba(186,255,229,.2);background:radial-gradient(ellipse at 50% 42%,#176b55 0%,#0d493b 43%,#082a25 75%,#071b19 100%);box-shadow:inset 0 0 0 9px rgba(0,0,0,.12),inset 0 0 90px rgba(0,0,0,.3),0 28px 90px rgba(0,0,0,.3);min-height:400px}
+.table-wrap:before{content:"";position:absolute;inset:16px;border:1px solid rgba(202,255,235,.13);border-radius:24px;pointer-events:none}
+.table-wrap:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(118deg,transparent 0 5px,rgba(255,255,255,.012) 6px 7px);pointer-events:none}
+.table-inner{position:relative;z-index:1;min-height:400px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;gap:20px}
+.seat{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;background:rgba(2,17,14,.52);border:1px solid rgba(255,255,255,.1);min-width:190px;box-shadow:0 8px 25px #00100d33}
+.avatar{height:42px;width:42px;flex-shrink:0;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#244e46,#102c27);border:1px solid #ffffff22;font-size:1.25rem}
+.seat.active{border-color:#8fffe0aa;box-shadow:0 0 0 1px #8fffe022,0 0 25px #50e6bb1c}
+.seat.active .avatar{background:linear-gradient(145deg,#a0ffe5,#35cda4);color:#073a2c}
+.cards{display:flex;justify-content:center;gap:clamp(4px,1.2vw,12px);min-height:clamp(78px,12vw,120px);align-items:center}
+.card{width:clamp(48px,7.2vw,76px);height:clamp(70px,10.5vw,108px);border-radius:10px;background:linear-gradient(145deg,#fff,#e8f0ee);color:#15201e;display:flex;flex-direction:column;justify-content:space-between;padding:6px 7px;box-shadow:0 9px 20px #00100d55;border:1px solid #ffffffaa;position:relative;transform-origin:center;animation:deal .32s cubic-bezier(.2,.8,.2,1) both;font-weight:850}
+.card.red{color:#dc405b}
+.card .rank{font-size:clamp(.95rem,2.3vw,1.3rem);line-height:1}
+.card .suit{font-size:clamp(1rem,2.5vw,1.45rem);line-height:1}
+.card .corner-bottom{align-self:flex-end;transform:rotate(180deg)}
+.card.back{background:linear-gradient(135deg,#143c39,#0c2529);border:2px solid #8fffe0aa;color:#8fffe0;display:grid;place-items:center;font-size:1.6rem}
+@keyframes deal{from{opacity:0;transform:translateY(-18px) rotate(-5deg) scale(.86)}to{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+.pot-pill{border:1px solid #b4ffe34a;background:rgba(3,26,21,.62);border-radius:999px;padding:9px 17px;display:inline-flex;align-items:center;gap:9px;box-shadow:0 0 30px #66ffd31a}
+.chip{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:50%;background:repeating-conic-gradient(#c5ffed 0 12deg,#2bd1a7 12deg 24deg);color:#073a2d;font-size:.62rem;font-weight:900;border:2px solid #b6ffe7;box-shadow:0 2px 6px #00140e66}
+.action{border-radius:15px;padding:13px 17px;font-weight:800;font-size:.9rem;transition:transform .18s,filter .18s,background .18s;border:1px solid transparent;min-height:48px}
+.action:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.1)}
+.action:active:not(:disabled){transform:translateY(1px)}
+.action:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.4)}
+.primary{color:#06372b;background:linear-gradient(135deg,#b7ffe9,#54e8bd);box-shadow:0 8px 25px #40e7b822}
+.secondary{background:rgba(255,255,255,.08);border-color:#ffffff18;color:#f0fffa}
+.danger{background:rgba(255,89,112,.12);border-color:#ff6b7c44;color:#ff9aa7}
+.bet-panel{background:rgba(0,0,0,.18);border:1px solid #ffffff12;border-radius:18px;padding:14px}
+input[type=range]{width:100%;accent-color:#78f7d0;cursor:pointer}
+.status-dot{height:7px;width:7px;border-radius:50%;background:#68f5c7;box-shadow:0 0 12px #68f5c7;display:inline-block}
+.log-line{border-bottom:1px solid #ffffff0b;padding:9px 0;color:#b5cbc5;font-size:.82rem}
+.log-line:last-child{border:0}
+.tag{border:1px solid #ffffff17;background:#ffffff09;border-radius:999px;padding:5px 9px;font-size:.7rem;color:#c4d9d3}
+.modal{position:fixed;inset:0;z-index:50;background:#020c0bd9;backdrop-filter:blur(12px);display:grid;place-items:center;padding:20px}
+.modal-card{width:min(440px,100%);border-radius:26px;padding:26px}
+@media(max-width:640px){
+ .table-wrap{border-radius:24px;min-height:365px}
+ .table-inner{padding:17px;min-height:365px}
+ .table-wrap:before{inset:10px;border-radius:17px}
+ .seat{min-width:0;padding:8px 10px;gap:8px}
+ .avatar{width:34px;height:34px;border-radius:11px}
+ .metric{font-size:1.05rem}
+ .action{padding:12px 10px;font-size:.82rem}
+ .hide-mobile{display:none}
+ .cards{min-height:80px}
+ .card{border-radius:8px;padding:5px}
+ .pot-pill{padding:7px 12px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+   <div class="brandmark">V</div>
+   <div>
+    <div class="font-black tracking-tight text-lg leading-tight">VELVET <span class="text-emerald-200">POKER</span></div>
+    <div class="eyebrow">Texas Hold'em · Play money</div>
+   </div>
+  </div>
+  <div class="flex items-center gap-2 sm:gap-3">
+   <span class="tag hidden sm:inline-flex items-center gap-2"><span class="status-dot"></span> Local table</span>
+   <button id="helpBtn" class="action secondary !min-h-0 !py-2 !px-3" aria-label="How to play">? <span class="hide-mobile">How to play</span></button>
+  </div>
+ </div>
+</header>
+<main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+ <section class="grid grid-cols-3 gap-3 sm:gap-4">
+  <div class="glass rounded-2xl p-3 sm:p-4">
+   <div class="eyebrow">Your balance</div><div id="playerBalance" class="metric mt-1">$1,000</div><div class="text-xs text-emerald-100/60 mt-1">You</div>
+  </div>
+  <div class="glass rounded-2xl p-3 sm:p-4">
+   <div class="eyebrow">Pot</div><div id="potDisplay" class="metric mt-1 text-emerald-200">$0</div><div id="streetLabel" class="text-xs text-emerald-100/60 mt-1">Ready to deal</div>
+  </div>
+  <div class="glass rounded-2xl p-3 sm:p-4">
+   <div class="eyebrow">AI balance</div><div id="aiBalance" class="metric mt-1">$1,000</div><div class="text-xs text-emerald-100/60 mt-1">Velvet AI</div>
+  </div>
+ </section>
+ <section class="table-wrap">
+  <div class="table-inner">
+   <div class="flex justify-between items-start gap-3">
+    <div class="flex flex-col gap-2 items-start">
+     <div id="aiSeat" class="seat">
+      <div class="avatar">♟</div>
+      <div><div class="font-bold text-sm">Velvet AI <span id="aiDealer" class="text-emerald-200 text-xs"></span></div><div id="aiState" class="text-xs text-white/55 mt-1">Waiting for deal</div></div>
+     </div>
+     <div id="aiCards" class="cards !justify-start !min-h-0"></div>
+    </div>
+    <div class="tag" id="roundTag">NEW HAND</div>
+   </div>
+   <div class="text-center space-y-3">
+    <div class="pot-pill"><span class="chip">V</span><span class="eyebrow !text-emerald-100/80">Pot</span><span id="tablePot" class="font-extrabold text-lg">$0</span></div>
+    <div id="communityCards" class="cards" aria-label="Community cards"></div>
+    <div id="handMessage" class="text-sm text-emerald-50/75 min-h-5">Welcome to Velvet. Deal a hand to begin.</div>
+   </div>
+   <div class="flex justify-between items-end gap-3">
+    <div id="playerSeat" class="seat active">
+     <div class="avatar">♙</div>
+     <div><div class="font-bold text-sm">You <span id="playerDealer" class="text-emerald-200 text-xs"></span></div><div id="playerState" class="text-xs text-white/55 mt-1">Ready to play</div></div>
+    </div>
+    <div class="text-right"><div class="eyebrow mb-2">Your cards</div><div id="playerCards" class="cards !justify-end !min-h-0"></div></div>
+   </div>
+  </div>
+ </section>
+ <section class="grid lg:grid-cols-[1.45fr_.75fr] gap-5">
+  <div class="glass rounded-3xl p-4 sm:p-5 space-y-4">
+   <div class="flex items-center justify-between gap-3">
+    <div><div class="font-bold text-lg">Your move</div><div id="turnHint" class="text-sm text-white/55 mt-1">Start a new hand when you're ready.</div></div>
+    <span id="turnBadge" class="tag">Waiting</span>
+   </div>
+   <div id="betPanel" class="bet-panel space-y-3">
+    <div class="flex justify-between items-center gap-3"><label for="betRange" class="text-sm font-semibold">Bet / raise amount</label><div class="font-black text-emerald-200" id="betAmount">$40</div></div>
+    <input id="betRange" type="range" min="20" max="500" step="10" value="40" />
+    <div class="flex flex-wrap gap-2">
+     <button class="tag" data-add="10">+$10</button><button class="tag" data-add="25">+$25</button><button class="tag" data-add="50">+$50</button><button class="tag" data-add="100">+$100</button>
+     <span class="text-xs text-white/40 self-center ml-auto" id="betRangeHint">Total chips to put in</span>
+    </div>
+   </div>
+   <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+    <button id="checkCallBtn" class="action secondary" disabled>Check</button>
+    <button id="raiseBtn" class="action primary" disabled>Bet</button>
+    <button id="foldBtn" class="action danger" disabled>Fold</button>
+    <button id="dealBtn" class="action secondary">Deal hand ↗</button>
+   </div>
+   <div class="flex flex-wrap gap-2 text-xs text-white/45"><span class="tag">Blinds $10 / $20</span><span class="tag">No-limit</span><span class="tag">Fictional chips only</span></div>
+  </div>
+  <aside class="glass rounded-3xl p-4 sm:p-5">
+   <div class="flex items-center justify-between mb-3"><div class="font-bold text-lg">Table activity</div><button id="clearLogBtn" class="text-xs text-emerald-100/55 hover:text-emerald-100">Clear</button></div>
+   <div id="activityLog" class="max-h-64 overflow-y-auto"><div class="log-line">Welcome. Press <b>Deal hand</b> to play.</div></div>
+   <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+    <div><div class="eyebrow">Your style</div><div id="styleReadout" class="text-sm font-semibold mt-1">Balanced</div></div>
+    <div class="text-right"><div class="eyebrow">Hands played</div><div id="handsPlayed" class="font-bold mt-1">0</div></div>
+   </div>
+  </aside>
+ </section>
+ <p class="text-center text-xs text-white/35 pb-2">Velvet is a local game for entertainment. No real money, accounts, or online play.</p>
+</main>
+<div id="modal" class="modal hidden">
+ <div class="glass modal-card">
+  <div class="flex items-start justify-between gap-4"><div><div class="eyebrow">Velvet poker guide</div><h2 class="text-2xl font-black mt-1">How to play</h2></div><button id="closeHelp" class="action secondary !min-h-0 !py-1 !px-3">✕</button></div>
+  <div class="space-y-3 text-sm text-white/75 mt-5 leading-relaxed">
+   <p>Make the best five-card poker hand using your two private cards and the five community cards. The best hand wins the pot.</p>
+   <p><b class="text-white">Check</b> keeps you in when no bet is owed. <b class="text-white">Call</b> matches the current bet. <b class="text-white">Bet/Raise</b> puts chips in; use the slider to choose the total amount for this action. <b class="text-white">Fold</b> gives up the hand.</p>
+   <p>Each hand uses $10/$20 blinds. You and the AI start with $1,000. The AI estimates hand strength and draws, considers pot odds and the street, and sometimes bluffs.</p>
+   <p>When a hand ends, choose <b class="text-white">Deal next hand</b>. If either player runs out of chips, use <b class="text-white">Restart bankroll</b> to start fresh.</p>
+  </div>
+  <button id="closeHelp2" class="action primary w-full mt-6">Got it</button>
+ </div>
+</div>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const SUITS = ['♠', '♥', '♦', '♣'];
+const suitSymbols = {S:'♠',H:'♥',D:'♦',C:'♣'};
+let playerStack=1000, aiStack=1000, pot=0, deck=[], playerCards=[], aiCards=[], board=[];
+let street='idle', currentBet=0, playerBet=0, aiBet=0, playerTotal=0, aiTotal=0;
+let playerTurn=false, handOver=true, folded=false, allIn=false, playerActed=false, aiActed=false, aiThinking=false;
+let hands=0, aggression=0, passive=0, buttonPlayer=true, smallBlind=10, bigBlind=20, minRaise=20, lastRaise=20;
+let logEntries=[], handSerial=0;
 
+const money = n => '$' + Math.max(0, Math.round(n)).toLocaleString('en-US');
 
+function makeDeck(){
+ const d=[];
+ for(let s of ['S','H','D','C']) for(let r=2;r<=14;r++) d.push({r,s});
+ for(let i=d.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [d[i],d[j]]=[d[j],d[i]];
+ }
+ return d;
+}
+function cardText(c){
+ return (c.r<=10?String(c.r):({11:'J',12:'Q',13:'K',14:'A'}[c.r]))+suitSymbols[c.s];
+}
+function renderCard(c, hidden=false){
+ if(hidden) return '<div class="card back" aria-label="Face-down card">✦</div>';
+ const red=c.s==='H'||c.s==='D';
+ const r=c.r<=10?c.r:({11:'J',12:'Q',13:'K',14:'A'}[c.r]);
+ const s=suitSymbols[c.s];
+ return `<div class="card ${red?'red':''}" aria-label="${r} ${s}"><div class="rank">${r}</div><div class="suit">${s}</div><div class="corner-bottom"><div class="rank">${r}</div><div class="suit">${s}</div></div></div>`;
+}
+function showCards(id,cards,hide=false){$(id).innerHTML=cards.map(c=>renderCard(c,hide)).join('');}
+function addLog(msg){
+ logEntries.unshift(msg);
+ logEntries=logEntries.slice(0,35);
+ $('activityLog').innerHTML=logEntries.map(x=>`<div class="log-line">${x}</div>`).join('');
+}
+function refresh(){
+ $('playerBalance').textContent=money(playerStack);
+ $('aiBalance').textContent=money(aiStack);
+ $('potDisplay').textContent=money(pot);
+ $('tablePot').textContent=money(pot);
+ $('streetLabel').textContent=street==='idle'?'Ready to deal':street==='showdown'?'Showdown':street[0].toUpperCase()+street.slice(1);
+ $('roundTag').textContent=street==='idle'?'NEW HAND':street.toUpperCase();
+ $('playerState').textContent=handOver?'Ready':playerTurn?'Your turn':playerBet>0?'In hand · '+money(playerBet):'In hand';
+ $('aiState').textContent=handOver?'Waiting for deal':aiThinking?'Thinking…':aiBet>0?'In hand · '+money(aiBet):'In hand';
+ $('playerSeat').classList.toggle('active',playerTurn&&!handOver);
+ $('aiSeat').classList.toggle('active',aiThinking||(!playerTurn&&!handOver));
+ $('playerDealer').textContent=buttonPlayer?' · D / SB':'';
+ $('aiDealer').textContent=!buttonPlayer?' · D / SB':'';
+ const toCall=Math.max(0,currentBet-playerBet);
+ $('checkCallBtn').textContent=toCall===0?'Check':`Call ${money(Math.min(toCall,playerStack))}`;
+ $('checkCallBtn').disabled=handOver||!playerTurn||aiThinking;
+ $('foldBtn').disabled=handOver||!playerTurn||aiThinking;
+ $('raiseBtn').disabled=handOver||!playerTurn||aiThinking||playerStack<=toCall||playerStack===0;
+ $('dealBtn').textContent=handOver?(playerStack===0||aiStack===0?'Restart bankroll':'Deal next hand'):'Hand in progress';
+ $('dealBtn').disabled=!handOver;
+ $('turnBadge').textContent=handOver?'Hand complete':aiThinking?'AI thinking':playerTurn?'Your turn':'AI turn';
+ $('turnHint').textContent=handOver?'Deal a hand to play another round.':playerTurn?(toCall?`${money(toCall)} to call. Choose call, raise, or fold.`:'No bet to call. Check or bet.'):'The AI is deciding…';
+ $('betPanel').style.opacity=handOver||!playerTurn||aiThinking?'.5':'1';
+ $('betRange').disabled=handOver||!playerTurn||aiThinking;
+ $('styleReadout').textContent=aggression>passive+2?'Aggressive':passive>aggression+2?'Patient':'Balanced';
+ $('handsPlayed').textContent=hands;
+}
+function syncBetSlider(){
+ const owed=Math.max(0,currentBet-playerBet),max=Math.max(20,playerStack);
+ $('betRange').min=Math.min(max,Math.max(20,owed+lastRaise));
+ $('betRange').max=max;
+ $('betRange').value=Math.min(max,Math.max(Number($('betRange').min),Number($('betRange').value)||40));
+ updateBetLabel();
+}
+function updateBetLabel(){$('betAmount').textContent=money(Number($('betRange').value));$('betRangeHint').textContent='Total chips for this action';}
 
-0001  <!DOCTYPE html>
-0002  <html lang="en">
-0003  <head>
-0004    <meta charset="UTF-8" />
-0005    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-0006    <title>Velvet — Adaptive Poker</title>
-0007    <style>
-0008      :root {
-0009        --bg: #080a12;
-0010        --panel: rgba(20, 23, 35, .82);
-0011        --panel-solid: #141723;
-0012        --panel-soft: #1a1e2d;
-0013        --line: rgba(255, 255, 255, .09);
-0014        --text: #f5f6fb;
-0015        --muted: #8990a6;
-0016        --dim: #5b6276;
-0017        --mint: #8df3c3;
-0018        --violet: #9b8cff;
-0019        --coral: #ff8d83;
-0020        --yellow: #ffd479;
-0021        --shadow: 0 24px 70px rgba(0, 0, 0, .38);
-0022      }
-0023  
-0024      * { box-sizing: border-box; }
-0025      html { min-width: 320px; background: var(--bg); }
-0026      body {
-0027        margin: 0;
-0028        color: var(--text);
-0029        background:
-0030          radial-gradient(circle at 64% -10%, rgba(131, 103, 255, .16), transparent 33rem),
-0031          radial-gradient(circle at -10% 80%, rgba(67, 206, 160, .08), transparent 28rem),
-0032          var(--bg);
-0033        font: 500 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-0034        letter-spacing: .01em;
-0035      }
-0036  
-0037      button { font: inherit; }
-0038      .app-shell { display: flex; min-height: 100vh; }
-0039      .sidebar {
-0040        width: 76px;
-0041        border-right: 1px solid var(--line);
-0042        background: rgba(10, 12, 20, .76);
-0043        display: flex;
-0044        flex-direction: column;
-0045        align-items: center;
-0046        padding: 23px 0 20px;
-0047        gap: 24px;
-0048        flex: 0 0 auto;
-0049      }
-0050      .brand-mark {
-0051        width: 34px;
-0052        height: 34px;
-0053        display: grid;
-0054        place-items: center;
-0055        color: #11121d;
-0056        background: linear-gradient(135deg, var(--mint), #c0ffe5);
-0057        border-radius: 11px;
-0058        font-weight: 950;
-0059        font-size: 18px;
-0060        box-shadow: 0 0 30px rgba(141, 243, 195, .14);
-0061      }
-0062      .nav-stack { display: grid; gap: 10px; }
-0063      .nav-button {
-0064        width: 42px;
-0065        height: 42px;
-0066        display: grid;
-0067        place-items: center;
-0068        border: 1px solid transparent;
-0069        color: var(--dim);
-0070        background: transparent;
-0071        border-radius: 13px;
-0072        cursor: pointer;
-0073        transition: .2s ease;
-0074      }
-0075      .nav-button:hover, .nav-button.active {
-0076        color: var(--text);
-0077        border-color: var(--line);
-0078        background: var(--panel-soft);
-0079        box-shadow: 0 7px 18px rgba(0, 0, 0, .16);
-0080      }
-0081      .nav-button svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-0082      .sidebar-bottom { margin-top: auto; display: grid; gap: 12px; justify-items: center; }
-0083      .presence-dot {
-0084        width: 8px; height: 8px; background: var(--mint); border-radius: 99px;
-0085        box-shadow: 0 0 0 4px rgba(141, 243, 195, .09), 0 0 18px var(--mint);
-0086      }
-0087      .profile-mini {
-0088        width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px;
-0089        background: linear-gradient(135deg, #e5b5ff, #8274ff);
-0090        color: #191225; font-size: 12px; font-weight: 900;
-0091      }
-0092  
-0093      .main { width: min(100%, 1500px); margin: 0 auto; padding: 22px 30px 30px; }
-0094      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 22px; margin-bottom: 25px; }
-0095      .eyebrow {
-0096        display: flex; align-items: center; gap: 9px; text-transform: uppercase;
-0097        color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .16em;
-0098      }
-0099      .eyebrow .live {
-0100        width: 6px; height: 6px; border-radius: 50%; background: var(--coral);
-0101        box-shadow: 0 0 12px var(--coral);
-0102      }
-0103      h1 { margin: 3px 0 0; font-size: clamp(21px, 3vw, 28px); letter-spacing: -.04em; }
-0104      .top-actions { display: flex; align-items: center; gap: 11px; }
-0105      .session-chip, .icon-button {
-0106        border: 1px solid var(--line); background: rgba(255,255,255,.035); color: var(--muted);
-0107        border-radius: 11px; height: 39px;
-0108      }
-0109      .session-chip { display: flex; align-items: center; gap: 10px; padding: 0 13px; }
-0110      .session-chip strong { color: var(--text); font-weight: 700; }
-0111      .icon-button { width: 39px; cursor: pointer; display: grid; place-items: center; }
-0112      .icon-button:hover { color: var(--text); background: var(--panel-soft); }
-0113      .icon-button svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-0114  
-0115      .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
-0116      .table-panel {
-0117        position: relative; overflow: hidden; min-height: 720px;
-0118        border: 1px solid var(--line); border-radius: 22px; background: var(--panel);
-0119        box-shadow: var(--shadow);
-0120      }
-0121      .table-panel::before {
-0122        content: ""; position: absolute; inset: 0; pointer-events: none;
-0123        background-image: linear-gradient(rgba(255,255,255,.014) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
-0124        background-size: 45px 45px;
-0125        mask-image: linear-gradient(to bottom, black, transparent 90%);
-0126      }
-0127      .table-toolbar {
-0128        position: relative; z-index: 2; padding: 20px 22px 0;
-0129        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-0130      }
-0131      .game-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-0132      .game-tag {
-0133        display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--line);
-0134        border-radius: 8px; color: var(--muted); background: rgba(255,255,255,.035); font-size: 11px;
-0135      }
-0136      .game-tag strong { color: var(--text); font-weight: 750; }
-0137      .game-tag svg { width: 14px; height: 14px; stroke: var(--mint); fill: none; stroke-width: 1.8; }
-0138      .round-info { text-align: right; color: var(--muted); font-size: 11px; }
-0139      .round-info strong { display: block; color: var(--text); font-size: 13px; }
-0140  
-0141      .table-stage {
-0142        position: relative; width: min(86%, 840px); aspect-ratio: 1.7;
-0143        min-height: 410px; margin: 37px auto 29px;
-0144        display: grid; place-items: center;
-0145      }
-0146      .felt {
-0147        position: absolute; inset: 0; border-radius: 48% / 45%;
-0148        background: radial-gradient(ellipse at 50% 46%, #1e694f 0, #15513e 55%, #0e382d 100%);
-0149        border: 13px solid #252231; box-shadow: inset 0 0 0 2px rgba(173, 123, 73, .3), inset 0 0 60px rgba(0,0,0,.44), 0 25px 40px rgba(0,0,0,.35);
-0150      }
-0151      .felt::after {
-0152        content: ""; position: absolute; inset: 17px; border: 1px solid rgba(235, 204, 148, .13);
-0153        border-radius: inherit;
-0154      }
-0155      .felt-center { position: relative; z-index: 1; text-align: center; margin-top: -3px; }
-0156      .pot-label { color: rgba(234, 255, 246, .65); font-size: 10px; text-transform: uppercase; letter-spacing: .17em; }
-0157      .pot-value { margin-top: 2px; color: #fff; font-size: 26px; font-weight: 800; letter-spacing: -.04em; }
-0158      .community { display: flex; justify-content: center; gap: 7px; margin-top: 13px; }
-0159      .playing-card {
-0160        width: 43px; height: 60px; padding: 4px;
-0161        display: flex; flex-direction: column; justify-content: space-between;
-0162        background: #fbfbfd; color: #171923; border-radius: 6px;
-0163        box-shadow: 0 7px 12px rgba(0,0,0,.22); font-size: 11px; font-weight: 850; text-align: left;
-0164      }
-0165      .playing-card.red { color: #da5c61; }
-0166      .playing-card .suit { align-self: center; font-size: 23px; line-height: 1; }
-0167      .playing-card .rank-bottom { align-self: flex-end; transform: rotate(180deg); }
-0168      .seat { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-0169      .seat.nova { top: -13px; left: 8%; }
-0170      .seat.vale { top: -13px; right: 8%; }
-0171      .seat.you { bottom: -14px; left: 50%; transform: translateX(-50%); }
-0172      .seat.mako { left: -39px; top: 50%; transform: translateY(-50%); }
-0173      .seat.river { right: -39px; top: 50%; transform: translateY(-50%); }
-0174      .avatar-wrap { position: relative; }
-0175      .avatar {
-0176        width: 48px; height: 48px; display: grid; place-items: center; border-radius: 16px;
-0177        color: #121522; font-size: 13px; font-weight: 950; border: 3px solid rgba(255,255,255,.12);
-0178        box-shadow: 0 8px 15px rgba(0,0,0,.28);
-0179      }
-0180      .avatar.nova { background: linear-gradient(135deg, #ffd58f, #ff8d83); }
-0181      .avatar.vale { background: linear-gradient(135deg, #a99cff, #7188ff); }
-0182      .avatar.mako { background: linear-gradient(135deg, #88f3c3, #41b7ae); }
-0183      .avatar.you { background: linear-gradient(135deg, #f2bdff, #9f7bff); }
-0184      .avatar.river { background: linear-gradient(135deg, #f6e195, #e7a45f); }
-0185      .dealer {
-0186        position: absolute; right: -8px; bottom: -6px; width: 18px; height: 18px; display: grid; place-items: center;
-0187        background: #fbfbfd; color: #171923; border-radius: 50%; font-size: 9px; font-weight: 900;
-0188        border: 2px solid #164e3c;
-0189      }
-0190      .seat-name { color: rgba(255,255,255,.84); font-size: 11px; font-weight: 700; }
-0191      .seat-stack { color: var(--mint); font-size: 11px; }
-0192      .seat-stack.neutral { color: #f4d18e; }
-0193      .seat-label {
-0194        position: absolute; white-space: nowrap; top: 66px; padding: 5px 8px; border-radius: 7px;
-0195        background: rgba(9,12,19,.75); border: 1px solid var(--line); color: var(--muted); font-size: 10px;
-0196      }
-0197      .mako .seat-label, .river .seat-label { top: 53px; }
-0198      .you .seat-label { color: var(--violet); border-color: rgba(155, 140, 255, .22); }
-0199      .bet-bubble {
-0200        position: absolute; min-width: 54px; padding: 5px 8px; border-radius: 7px; text-align: center;
-0201        color: #e8e9f2; background: rgba(8, 10, 16, .82); border: 1px solid var(--line); font-size: 10px; font-weight: 700;
-0202      }
-0203      .nova .bet-bubble { top: 64px; left: -58px; }
-0204      .vale .bet-bubble { top: 64px; right: -58px; }
-0205      .mako .bet-bubble { left: 58px; top: 1px; }
-0206      .river .bet-bubble { right: 58px; top: 1px; }
-0207      .you .bet-bubble { bottom: 64px; }
-0208      .action-strip { position: relative; z-index: 2; margin: 0 22px; padding-top: 19px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: center; }
-0209      .action-button {
-0210        min-width: 108px; height: 42px; border: 1px solid var(--line); border-radius: 10px;
-0211        background: rgba(255,255,255,.045); color: var(--text); font-weight: 750; cursor: pointer; transition: .2s ease;
-0212      }
-0213      .action-button:hover { transform: translateY(-2px); background: rgba(255,255,255,.08); }
-0214      .action-button.primary { border-color: rgba(141,243,195,.25); background: var(--mint); color: #0a2019; }
-0215      .action-button.primary:hover { background: #b3ffdc; }
-0216      .action-button.accent { border-color: rgba(155,140,255,.3); background: rgba(155,140,255,.14); color: #c3bbff; }
-0217      .action-button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-0218      .action-meta { display: flex; justify-content: space-between; align-items: center; margin: 14px 22px 0; color: var(--muted); font-size: 11px; }
-0219      .action-meta strong { color: var(--text); }
-0220      input[type="range"] { accent-color: var(--mint); width: 110px; vertical-align: middle; }
-0221  
-0222      .right-column { display: grid; gap: 15px; }
-0223      .card-panel { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: 0 16px 45px rgba(0,0,0,.18); padding: 18px; }
-0224      .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
-0225      .panel-heading h2 { margin: 0; font-size: 14px; letter-spacing: -.01em; }
-0226      .panel-heading span { color: var(--dim); font-size: 11px; }
-0227      .read-score {
-0228        display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 15px;
-0229        border-radius: 12px; background: linear-gradient(110deg, rgba(141,243,195,.09), rgba(155,140,255,.07)); border: 1px solid rgba(141,243,195,.13);
-0230      }
-0231      .score-ring { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--mint) 0 78%, rgba(255,255,255,.08) 78%); position: relative; }
-0232      .score-ring::after { content: ""; position: absolute; inset: 4px; background: var(--panel-solid); border-radius: inherit; }
-0233      .score-ring b { position: relative; z-index: 1; font-size: 12px; }
-0234      .read-score p { margin: 0; color: var(--muted); font-size: 11px; }
-0235      .read-score strong { display: block; margin-bottom: 2px; color: var(--text); font-size: 12px; }
-0236      .bot-list { display: grid; gap: 11px; }
-0237      .bot {
-0238        padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.025);
-0239        transition: .2s ease;
-0240      }
-0241      .bot:hover { border-color: rgba(255,255,255,.17); background: rgba(255,255,255,.045); }
-0242      .bot-top { display: flex; align-items: center; gap: 9px; }
-0243      .bot-avatar { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 9px; color: #171923; font-size: 9px; font-weight: 900; }
-0244      .bot-avatar.nova { background: linear-gradient(135deg, #ffd58f, #ff8d83); }
-0245      .bot-avatar.vale { background: linear-gradient(135deg, #a99cff, #7188ff); }
-0246      .bot-avatar.mako { background: linear-gradient(135deg, #88f3c3, #41b7ae); }
-0247      .bot-name { flex: 1; font-size: 12px; font-weight: 800; }
-0248      .bot-style { color: var(--muted); font-size: 10px; }
-0249      .bot-read { margin: 9px 0 8px; color: #abb1c2; font-size: 10px; }
-0250      .bot-read b { color: var(--text); font-weight: 700; }
-0251      .meter { height: 4px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
-0252      .meter span { display: block; width: 68%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--violet), var(--mint)); transition: width .4s ease; }
-0253      .bot:nth-child(2) .meter span { width: 42%; background: linear-gradient(90deg, var(--violet), #c2bbff); }
-0254      .bot:nth-child(3) .meter span { width: 81%; background: linear-gradient(90deg, var(--coral), var(--yellow)); }
-0255      .bot-footer { display: flex; justify-content: space-between; color: var(--dim); font-size: 9px; margin-top: 6px; }
-0256      .bot-footer strong { color: var(--mint); font-weight: 750; }
-0257  
-0258      .activity-list { display: grid; gap: 13px; }
-0259      .activity { display: flex; align-items: flex-start; gap: 10px; }
-0260      .activity-dot { width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--violet); flex: 0 0 auto; }
-0261      .activity:first-child .activity-dot { background: var(--mint); }
-0262      .activity:nth-child(3) .activity-dot { background: var(--coral); }
-0263      .activity p { margin: 0; color: #c2c6d2; font-size: 10px; }
-0264      .activity p span { display: block; margin-top: 2px; color: var(--dim); font-size: 9px; }
-0265      .tip { display: flex; gap: 10px; padding: 12px; border: 1px solid rgba(255,212,121,.16); border-radius: 12px; background: rgba(255,212,121,.05); color: #d8c99f; font-size: 10px; }
-0266      .tip svg { width: 15px; height: 15px; flex: 0 0 auto; stroke: var(--yellow); fill: none; stroke-width: 1.7; }
-0267      .toast {
-0268        position: fixed; left: 50%; bottom: 24px; z-index: 20; transform: translate(-50%, 120px);
-0269        padding: 11px 16px; border: 1px solid rgba(141,243,195,.28); border-radius: 10px; background: #16231f;
-0270        color: var(--mint); font-size: 12px; box-shadow: var(--shadow); transition: transform .25s ease;
-0271      }
-0272      .toast.show { transform: translate(-50%, 0); }
-0273  
-0274      @media (max-width: 1120px) {
-0275        .workspace { grid-template-columns: 1fr; }
-0276        .right-column { grid-template-columns: repeat(3, 1fr); }
-0277        .right-column .card-panel:last-child { grid-column: span 3; }
-0278      }
-0279      @media (max-width: 760px) {
-0280        .sidebar { width: 58px; }
-0281        .main { padding: 17px 13px 24px; }
-0282        .session-chip { display: none; }
-0283        .table-panel { min-height: 650px; }
-0284        .table-stage { width: 95%; min-height: 400px; margin-top: 47px; }
-0285        .seat.mako { left: -8px; }
-0286        .seat.river { right: -8px; }
-0287        .mako .bet-bubble { left: 46px; }
-0288        .river .bet-bubble { right: 46px; }
-0289        .action-strip { flex-wrap: wrap; }
-0290        .action-button { flex: 1 1 30%; min-width: 90px; }
-0291        .right-column { grid-template-columns: 1fr; }
-0292        .right-column .card-panel:last-child { grid-column: auto; }
-0293      }
-0294      @media (max-width: 500px) {
-0295        .table-toolbar { align-items: flex-start; }
-0296        .round-info { display: none; }
-0297        .table-stage { width: 103%; margin-left: -1.5%; }
-0298        .felt { border-width: 9px; }
-0299        .seat.nova { left: 3%; }
-0300        .seat.vale { right: 3%; }
-0301        .playing-card { width: 37px; height: 53px; }
-0302        .community { gap: 4px; }
-0303        .pot-value { font-size: 22px; }
-0304        .seat-name, .seat-stack { font-size: 10px; }
-0305        .seat-label { display: none; }
-0306        .seat.mako { left: 7px; }
-0307        .seat.river { right: 7px; }
-0308      }
-0309    </style>
-0310  </head>
-0311  <body>
-0312    <div class="app-shell">
-0313      <aside class="sidebar">
-0314        <div class="brand-mark">V</div>
-0315        <nav class="nav-stack" aria-label="Main navigation">
-0316          <button class="nav-button active" aria-label="Table" title="Table">
-0317            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.7"/><path d="M12 3.3v17.4M3.3 12h17.4"/></svg>
-0318          </button>
-0319          <button class="nav-button" aria-label="Analytics" title="Analytics">
-0320            <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h17"/><path d="m7 15 4-4 3 2 5-7"/></svg>
-0321          </button>
-0322          <button class="nav-button" aria-label="Challenges" title="Challenges">
-0323            <svg viewBox="0 0 24 24"><path d="M7 3h10v4a5 5 0 0 1-10 0V3Z"/><path d="M7 5H4v2a4 4 0 0 0 4 4M17 5h3v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>
-0324          </button>
-0325          <button class="nav-button" aria-label="Settings" title="Settings">
-0326            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L8 17l.1-.1A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.5-1H6v-2.4h.9a1.7 1.7 0 0 0 1.5-1A1.7 1.7 0 0 0 8.1 9L8 8.9l1.7-1.7.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-0327          </button>
-0328        </nav>
-0329        <div class="sidebar-bottom">
-0330          <div class="presence-dot" title="Connection healthy"></div>
-0331          <div class="profile-mini">JD</div>
-0332        </div>
-0333      </aside>
-0334  
-0335      <main class="main">
-0336        <header class="topbar">
-0337          <div>
-0338            <div class="eyebrow"><span class="live"></span> Live table · adaptive mode</div>
-0339            <h1>Night Shift <span style="color:var(--muted);font-weight:500;">/ $1–$2 NLH</span></h1>
-0340          </div>
-0341          <div class="top-actions">
-0342            <div class="session-chip"><span class="presence-dot"></span> <strong>Session focus</strong> &nbsp; 42 min</div>
-0343            <button class="icon-button" aria-label="Toggle sound" title="Toggle sound">
-0344              <svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></svg>
-0345            </button>
-0346            <button class="icon-button" aria-label="More options" title="More options">
-0347              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
-0348            </button>
-0349          </div>
-0350        </header>
-0351  
-0352        <section class="workspace">
-0353          <section class="table-panel" aria-label="Poker table">
-0354            <div class="table-toolbar">
-0355              <div class="game-tags">
-0356                <div class="game-tag"><strong>♠</strong> Hold'em</div>
-0357                <div class="game-tag"><strong>6-max</strong> · 100 BB</div>
-0358                <div class="game-tag"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg> Bots are learning</div>
-0359              </div>
-0360              <div class="round-info"><span>HAND #008421</span><strong>Pre-flop · your action</strong></div>
-0361            </div>
-0362  
-0363            <div class="table-stage">
-0364              <div class="felt"></div>
-0365              <div class="felt-center">
-0366                <div class="pot-label">total pot</div>
-0367                <div class="pot-value" id="potValue">$18.00</div>
-0368                <div class="community" aria-label="Community cards">
-0369                  <div class="playing-card"><span>A</span><span class="suit">♣</span><span class="rank-bottom">A</span></div>
-0370                  <div class="playing-card red"><span>J</span><span class="suit">♥</span><span class="rank-bottom">J</span></div>
-0371                  <div class="playing-card"><span>7</span><span class="suit">♠</span><span class="rank-bottom">7</span></div>
-0372                  <div class="playing-card" style="opacity:.18;"><span>?</span><span class="suit">✦</span><span class="rank-bottom">?</span></div>
-0373                  <div class="playing-card" style="opacity:.18;"><span>?</span><span class="suit">✦</span><span class="rank-bottom">?</span></div>
-0374                </div>
-0375              </div>
-0376  
-0377              <div class="seat nova">
-0378                <div class="bet-bubble">bets $6</div>
-0379                <div class="avatar-wrap"><div class="avatar nova">NO</div><div class="dealer">D</div></div>
-0380                <div class="seat-name">Nova</div><div class="seat-stack">$182.40</div>
-0381                <div class="seat-label">pressure seeking · 74%</div>
-0382              </div>
-0383              <div class="seat vale">
-0384                <div class="bet-bubble">calls $6</div>
-0385                <div class="avatar-wrap"><div class="avatar vale">VA</div></div>
-0386                <div class="seat-name">Vale</div><div class="seat-stack">$194.00</div>
-0387                <div class="seat-label">range builder · 61%</div>
-0388              </div>
-0389              <div class="seat mako">
-0390                <div class="bet-bubble">calls $6</div>
-0391                <div class="avatar-wrap"><div class="avatar mako">MA</div></div>
-0392                <div class="seat-name">Mako</div><div class="seat-stack">$203.60</div>
-0393                <div class="seat-label">pattern breaker · 83%</div>
-0394              </div>
-0395              <div class="seat river">
-0396                <div class="bet-bubble">folds</div>
-0397                <div class="avatar-wrap"><div class="avatar river">RI</div></div>
-0398                <div class="seat-name">River</div><div class="seat-stack neutral">$198.00</div>
-0399                <div class="seat-label">out of hand</div>
-0400              </div>
-0401              <div class="seat you">
-0402                <div class="bet-bubble" id="yourBet">$6 to call</div>
-0403                <div class="avatar-wrap"><div class="avatar you">YOU</div></div>
-0404                <div class="seat-name">You</div><div class="seat-stack">$201.00</div>
-0405                <div class="seat-label">your current profile · balanced</div>
-0406              </div>
-0407            </div>
-0408  
-0409            <div class="action-strip">
-0410              <button class="action-button" data-action="fold">Fold</button>
-0411              <button class="action-button primary" data-action="call">Call $6</button>
-0412              <button class="action-button accent" data-action="raise">Raise to $14</button>
-0413            </div>
-0414            <div class="action-meta">
-0415              <span>Raise size <input id="raiseRange" type="range" min="8" max="40" value="14" step="2" aria-label="Raise size" /> <strong id="raiseAmount">$14</strong></span>
-0416              <span>Time bank <strong id="timeBank">00:21</strong></span>
-0417            </div>
-0418          </section>
-0419  
-0420          <aside class="right-column">
-0421            <section class="card-panel">
-0422              <div class="panel-heading"><h2>Adaptive read</h2><span>updated now</span></div>
-0423              <div class="read-score">
-0424                <div class="score-ring"><b>78</b></div>
-0425                <div><strong>They’re adjusting to you</strong><p>Your recent raises are widening their folds.</p></div>
-0426              </div>
-0427              <div class="bot-list">
-0428                <article class="bot">
-0429                  <div class="bot-top"><div class="bot-avatar nova">NO</div><div class="bot-name">Nova</div><div class="bot-style">high pressure</div></div>
-0430                  <div class="bot-read"><b>Read:</b> You defend blinds 18% more than table average.</div>
-0431                  <div class="meter"><span></span></div><div class="bot-footer"><span>adaptation</span><strong>68%</strong></div>
-0432                </article>
-0433                <article class="bot">
-0434                  <div class="bot-top"><div class="bot-avatar vale">VA</div><div class="bot-name">Vale</div><div class="bot-style">patient / precise</div></div>
-0435                  <div class="bot-read"><b>Read:</b> You size up when your range is polarized.</div>
-0436                  <div class="meter"><span></span></div><div class="bot-footer"><span>adaptation</span><strong>42%</strong></div>
-0437                </article>
-0438                <article class="bot">
-0439                  <div class="bot-top"><div class="bot-avatar mako">MA</div><div class="bot-name">Mako</div><div class="bot-style">unpredictable</div></div>
-0440                  <div class="bot-read"><b>Read:</b> You check back strong hands on wet boards.</div>
-0441                  <div class="meter"><span></span></div><div class="bot-footer"><span>adaptation</span><strong>81%</strong></div>
-0442                </article>
-0443              </div>
-0444            </section>
-0445  
-0446            <section class="card-panel">
-0447              <div class="panel-heading"><h2>Table pulse</h2><span>last 5 hands</span></div>
-0448              <div class="activity-list">
-0449                <div class="activity"><span class="activity-dot"></span><p>Nova took the lead with a 3-bet<span>12 sec ago · hand #008420</span></p></div>
-0450                <div class="activity"><span class="activity-dot"></span><p>Vale switched to pot control<span>28 sec ago · hand #008420</span></p></div>
-0451                <div class="activity"><span class="activity-dot"></span><p>Mako detected your hesitation<span>41 sec ago · hand #008419</span></p></div>
-0452              </div>
-0453            </section>
-0454  
-0455            <section class="card-panel">
-0456              <div class="tip">
-0457                <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8.5 14.5A6 6 0 1 1 16 14c-.9.7-1.5 1.5-1.8 2.5h-4.4c-.3-1-.8-1.8-1.3-2Z"/><path d="M12 5v2"/></svg>
-0458                <span><strong style="color:var(--yellow);">Coach note</strong><br />Mako is overcorrecting to your recent aggression. A small continuation bet may get more credit than usual.</span>
-0459              </div>
-0460            </section>
-0461          </aside>
-0462        </section>
-0463      </main>
-0464    </div>
-0465    <div class="toast" id="toast" role="status"></div>
-0466  
-0467    <script>
-0468      const toast = document.getElementById('toast');
-0469      const potValue = document.getElementById('potValue');
-0470      const yourBet = document.getElementById('yourBet');
-0471      const raiseRange = document.getElementById('raiseRange');
-0472      const raiseAmount = document.getElementById('raiseAmount');
-0473      const timeBank = document.getElementById('timeBank');
-0474      let pot = 18;
-0475      let seconds = 21;
-0476      let handFinished = false;
-0477  
-0478      function money(value) {
-0479        return `$${Number(value).toFixed(2)}`;
-0480      }
-0481  
-0482      function showToast(message) {
-0483        toast.textContent = message;
-0484        toast.classList.add('show');
-0485        window.clearTimeout(showToast.timeout);
-0486        showToast.timeout = window.setTimeout(() => toast.classList.remove('show'), 2600);
-0487      }
-0488  
-0489      function updateAction(action) {
-0490        if (handFinished) return;
-0491        const amount = Number(raiseRange.value);
-0492        if (action === 'fold') {
-0493          yourBet.textContent = 'folded';
-0494          showToast('You folded — bots are updating their reads.');
-0495          handFinished = true;
-0496        } else if (action === 'call') {
-0497          pot += 6;
-0498          potValue.textContent = money(pot);
-0499          yourBet.textContent = 'called $6';
-0500          showToast('Called $6. Nova is recalculating your defense frequency.');
-0501          seconds = 21;
-0502        } else if (action === 'raise') {
-0503          pot += amount;
-0504          potValue.textContent = money(pot);
-0505          yourBet.textContent = `raised to $${amount}`;
-0506          showToast(`Raised to $${amount} — Vale is narrowing your perceived range.`);
-0507          seconds = 21;
-0508        }
-0509        if (action !== 'fold') {
-0510          document.querySelectorAll('.bot .meter span').forEach((meter, index) => {
-0511            const current = [68, 42, 81][index];
-0512            meter.style.width = Math.min(96, current + 4) + '%';
-0513          });
-0514        }
-0515      }
-0516  
-0517      document.querySelectorAll('[data-action]').forEach(button => {
-0518        button.addEventListener('click', () => updateAction(button.dataset.action));
-0519      });
-0520      raiseRange.addEventListener('input', () => {
-0521        raiseAmount.textContent = money(raiseRange.value).replace('.00', '');
-0522        document.querySelector('[data-action="raise"]').textContent = `Raise to $${raiseRange.value}`;
-0523      });
-0524      document.querySelectorAll('.nav-button').forEach(button => {
-0525        button.addEventListener('click', () => {
-0526          document.querySelectorAll('.nav-button').forEach(item => item.classList.remove('active'));
-0527          button.classList.add('active');
-0528          showToast(`${button.getAttribute('aria-label')} view selected`);
-0529        });
-0530      });
-0531      window.setInterval(() => {
-0532        if (handFinished) return;
-0533        seconds = Math.max(0, seconds - 1);
-0534        timeBank.textContent = `00:${String(seconds).padStart(2, '0')}`;
-0535        if (seconds === 0) {
-0536          updateAction('fold');
-0537          showToast('Time bank expired — hand folded.');
-0538        }
-0539      }, 1000);
-0540    </script>
-0541  </body>
-0542  </html>
+function startHand(){
+ if(!handOver)return;
+ if(playerStack<=0||aiStack<=0){
+  playerStack=aiStack=1000;hands=0;aggression=passive=0;
+  addLog('Fresh bankrolls: both players are back to $1,000.');
+ }
+ handSerial++;deck=makeDeck();playerCards=[deck.pop(),deck.pop()];aiCards=[deck.pop(),deck.pop()];board=[];pot=0;
+ currentBet=0;playerBet=aiBet=playerTotal=aiTotal=0;street='pre-flop';handOver=false;folded=false;allIn=false;playerActed=aiActed=false;aiThinking=false;
+ // Heads-up: dealer posts the small blind and acts first pre-flop.
+ if(buttonPlayer){postBlind('player',smallBlind);postBlind('ai',bigBlind);}
+ else{postBlind('ai',smallBlind);postBlind('player',bigBlind);}
+ currentBet=Math.max(playerBet,aiBet);minRaise=bigBlind;lastRaise=bigBlind;
+ showCards('playerCards',playerCards);
+ showCards('aiCards',aiCards,true);
+ showCards('communityCards',[]);
+ $('handMessage').textContent='Cards dealt. Make your move.';
+ addLog(`<b>Hand ${handSerial}</b> begins · blinds ${money(smallBlind)}/${money(bigBlind)}.`);
+ hands++;
+ if(playerStack===0||aiStack===0){allIn=true;playerActed=aiActed=false;}
+ playerTurn=buttonPlayer;
+ syncBetSlider();refresh();
+ if(!playerTurn)queueAI();
+}
+function postBlind(who,amount){
+ const stack=who==='player'?playerStack:aiStack;
+ const put=Math.min(stack,amount);
+ if(who==='player'){playerStack-=put;playerBet+=put;playerTotal+=put;}
+ else{aiStack-=put;aiBet+=put;aiTotal+=put;}
+ pot+=put;
+}
+function playerCheckCall(){
+ if(!playerTurn||handOver||aiThinking)return;
+ const owed=Math.max(0,currentBet-playerBet);
+ if(owed>0){
+  const paid=Math.min(owed,playerStack);
+  playerStack-=paid;playerBet+=paid;playerTotal+=paid;pot+=paid;playerActed=true;
+  passive++;addLog(`You call ${money(paid)}.`);
+ }else{playerActed=true;passive++;addLog('You check.');}
+ if(playerStack===0)allIn=true;
+ afterAction('player');
+}
+function playerRaise(){
+ if(!playerTurn||handOver||aiThinking)return;
+ const owed=Math.max(0,currentBet-playerBet);
+ const target=Math.min(playerStack,Math.max(Number($('betRange').value),owed+lastRaise));
+ if(target<=owed){playerCheckCall();return;}
+ const paid=target;
+ playerStack-=paid;playerBet+=paid;playerTotal+=paid;pot+=paid;
+ const newTotal=playerBet,raiseSize=newTotal-currentBet;
+ if(newTotal>currentBet){
+  lastRaise=Math.max(bigBlind,raiseSize);currentBet=newTotal;playerActed=true;aiActed=false;aggression++;
+ }else playerActed=true;
+ if(playerStack===0)allIn=true;
+ addLog(`You ${owed>0?'raise':'bet'} ${money(paid)}${playerStack===0?' · all-in':''}.`);
+ afterAction('player');
+}
+function playerFold(){
+ if(!playerTurn||handOver||aiThinking)return;
+ folded=true;passive++;addLog('You fold.');finishByFold('ai');
+}
+function afterAction(who){
+ if(handOver)return;
+ if(playerStack===0||aiStack===0)allIn=true;
+ refresh();
+ if(allIn){playerTurn=false;runOutBoard();return;}
+ if(playerBet===aiBet&&playerActed&&aiActed){advanceStreet();return;}
+ if(who==='player'){playerTurn=false;queueAI();}
+ else{playerTurn=true;syncBetSlider();refresh();}
+}
+function queueAI(){
+ if(handOver)return;
+ playerTurn=false;aiThinking=true;refresh();
+ setTimeout(()=>{if(handOver)return;aiThinking=false;aiAction();},650+Math.random()*650);
+}
+function aiAction(){
+ if(handOver)return;
+ const owed=Math.max(0,currentBet-aiBet);
+ const strength=estimateStrength(aiCards,board);
+ const potOdds=owed/(pot+owed||1);
+ const roundIndex=['pre-flop','flop','turn','river'].indexOf(street);
+ const aggressionRead=aggression>passive+2?.10:passive>aggression+2?-.07:0;
+ const bluffChance=Math.max(.025,Math.min(.24,.075+aggressionRead+(roundIndex===0?.035:0)));
+ const bluff=Math.random()<bluffChance;
+ const threshold=[.31,.36,.42,.48][Math.max(0,roundIndex)];
+ const callScore=strength+(bluff?.13:0)+(Math.random()-.5)*.16;
+ const canRaise=aiStack>owed+bigBlind;
+ if(owed===0){
+  if((strength>.67||bluff)&&canRaise&&Math.random()<(.22+strength*.25)){
+   const amount=Math.min(aiStack,Math.max(bigBlind,Math.min(Math.round(pot*(.35+Math.random()*.55)),Math.max(bigBlind,playerStack+playerBet))));
+   aiBet+=amount;aiTotal+=amount;aiStack-=amount;pot+=amount;
+   const raiseSize=aiBet-currentBet;currentBet=aiBet;lastRaise=Math.max(bigBlind,raiseSize);aiActed=true;playerActed=false;aggression++;
+   addLog(`Velvet AI bets ${money(amount)}${bluff&&strength<.45?' · bold move':''}.`);
+   afterAction('ai');return;
+  }
+  aiActed=true;passive++;addLog('Velvet AI checks.');afterAction('ai');return;
+ }
+ const potOddsThreshold=Math.max(.18,Math.min(.72,potOdds*1.55+.12));
+ const callThreshold=Math.max(threshold,potOddsThreshold);
+ if(callScore>=callThreshold||(bluff&&potOdds<.12)){
+  const paid=Math.min(owed,aiStack);
+  aiStack-=paid;aiBet+=paid;aiTotal+=paid;pot+=paid;aiActed=true;
+  addLog(`Velvet AI calls ${money(paid)}${aiStack===0?' · all-in':''}.`);
+  if(aiStack===0)allIn=true;
+  afterAction('ai');return;
+ }
+ if(canRaise&&strength>.74&&Math.random()<.28){
+  const extra=Math.min(aiStack-owed,Math.max(bigBlind,Math.round(pot*.45)));
+  const paid=Math.min(aiStack,owed+extra);
+  aiStack-=paid;aiBet+=paid;aiTotal+=paid;pot+=paid;
+  const oldBet=currentBet;currentBet=aiBet;lastRaise=Math.max(bigBlind,currentBet-oldBet);aiActed=true;playerActed=false;aggression++;
+  addLog(`Velvet AI raises to ${money(aiBet)}.`);
+  afterAction('ai');return;
+ }
+ addLog('Velvet AI folds.');finishByFold('player');
+}
+function advanceStreet(){
+ if(handOver)return;
+ playerBet=aiBet=0;currentBet=0;playerActed=aiActed=false;lastRaise=bigBlind;
+ if(street==='pre-flop'){street='flop';board.push(deck.pop(),deck.pop(),deck.pop());}
+ else if(street==='flop'){street='turn';board.push(deck.pop());}
+ else if(street==='turn'){street='river';board.push(deck.pop());}
+ else{showdown();return;}
+ showCards('communityCards',board);
+ $('handMessage').textContent=({flop:'The flop is out.',turn:'The turn card is out.',river:'The river card is out.'})[street];
+ addLog(`<b>${street[0].toUpperCase()+street.slice(1)}</b> · ${board.slice(-({flop:3,turn:1,river:1}[street])).map(cardText).join(' ')}`);
+ // Heads-up button acts first pre-flop and last post-flop.
+ playerTurn=!buttonPlayer;syncBetSlider();refresh();
+ if(!playerTurn)queueAI();
+}
+function runOutBoard(){
+ playerTurn=false;aiThinking=false;
+ const next=()=>{
+  if(handOver)return;
+  if(street==='pre-flop'){street='flop';board.push(deck.pop(),deck.pop(),deck.pop());}
+  else if(street==='flop'){street='turn';board.push(deck.pop());}
+  else if(street==='turn'){street='river';board.push(deck.pop());}
+  else{showdown();return;}
+  showCards('communityCards',board);
+  $('handMessage').textContent='All-in · dealing remaining community cards';
+  refresh();setTimeout(next,500);
+ };
+ setTimeout(next,500);
+}
+function finishByFold(winner){
+ if(handOver)return;
+ handOver=true;playerTurn=false;aiThinking=false;
+ if(winner==='player'){
+  playerStack+=pot;addLog(`You win ${money(pot)} · opponent folded.`);
+  $('handMessage').textContent=`You win ${money(pot)}. Velvet AI folded.`;
+ }else{
+  aiStack+=pot;addLog(`Velvet AI wins ${money(pot)} · you folded.`);
+  $('handMessage').textContent=`Velvet AI wins ${money(pot)}.`;
+ }
+ pot=0;showCards('aiCards',aiCards,true);buttonPlayer=!buttonPlayer;refresh();showCards('playerCards',playerCards);
+ $('turnHint').textContent='Hand over. Deal the next hand when ready.';
+}
+function showdown(){
+ if(handOver)return;
+ street='showdown';handOver=true;playerTurn=false;aiThinking=false;
+ const p=evaluate([...playerCards,...board]),a=evaluate([...aiCards,...board]);
+ showCards('aiCards',aiCards);
+ let winner,desc;
+ if(compareScores(p,a)>0){winner='player';desc=`You win with ${p.name}.`;playerStack+=pot;}
+ else if(compareScores(p,a)<0){winner='ai';desc=`Velvet AI wins with ${a.name}.`;aiStack+=pot;}
+ else{winner='tie';desc='Split pot · equal hands.';playerStack+=Math.floor(pot/2);aiStack+=Math.ceil(pot/2);}
+ addLog(`<b>Showdown</b> · You: ${p.name}; AI: ${a.name}.`);
+ addLog(winner==='tie'?`Pot split: ${money(pot)}.`:`${winner==='player'?'You':'Velvet AI'} win ${money(pot)}.`);
+ $('handMessage').textContent=desc;pot=0;buttonPlayer=!buttonPlayer;refresh();
+ $('turnHint').textContent=desc+' Deal the next hand to continue.';
+}
+function evaluate(cards){
+ // Scores compare lexicographically: category then kickers, larger is stronger.
+ const counts=new Map(),bySuit={S:[],H:[],D:[],C:[]};
+ for(const c of cards){counts.set(c.r,(counts.get(c.r)||0)+1);bySuit[c.s].push(c.r);}
+ const unique=[...new Set(cards.map(c=>c.r))].sort((a,b)=>b-a);
+ function straightHigh(vals){
+  const u=[...new Set(vals)].sort((a,b)=>b-a);
+  if(u.includes(14))u.push(1);
+  for(let i=0;i<=u.length-5;i++){
+   let ok=true;
+   for(let j=1;j<5;j++)if(u[i+j]!==u[i]-j){ok=false;break;}
+   if(ok)return u[i]===1?5:u[i];
+  }
+  return 0;
+ }
+ const flushSuit=Object.keys(bySuit).find(s=>bySuit[s].length>=5);
+ let sf=0;if(flushSuit)sf=straightHigh(bySuit[flushSuit]);
+ if(sf)return {cat:8,v:[sf],name:sf===14?'royal flush':'straight flush'};
+ const groups=[...counts.entries()].map(([r,n])=>({r,n})).sort((a,b)=>b.n-a.n||b.r-a.r);
+ if(groups[0].n===4)return {cat:7,v:[groups[0].r,...unique.filter(r=>r!==groups[0].r).slice(0,1)],name:'four of a kind'};
+ if(groups[0].n===3&&groups.some(g=>g.n>=2&&g.r!==groups[0].r))return {cat:6,v:[groups[0].r,groups.find(g=>g.r!==groups[0].r&&g.n>=2).r],name:'full house'};
+ if(flushSuit)return {cat:5,v:bySuit[flushSuit].sort((a,b)=>b-a).slice(0,5),name:'flush'};
+ const sh=straightHigh(unique);if(sh)return {cat:4,v:[sh],name:'straight'};
+ if(groups[0].n===3)return {cat:3,v:[groups[0].r,...unique.filter(r=>r!==groups[0].r).slice(0,2)],name:'three of a kind'};
+ const pairs=groups.filter(g=>g.n===2).map(g=>g.r).sort((a,b)=>b-a);
+ if(pairs.length>=2)return {cat:2,v:[pairs[0],pairs[1],...unique.filter(r=>r!==pairs[0]&&r!==pairs[1]).slice(0,1)],name:'two pair'};
+ if(pairs.length===1)return {cat:1,v:[pairs[0],...unique.filter(r=>r!==pairs[0]).slice(0,3)],name:'one pair'};
+ return {cat:0,v:unique.slice(0,5),name:'high card'};
+}
+function compareScores(a,b){
+ if(a.cat!==b.cat)return a.cat-b.cat;
+ const n=Math.max(a.v.length,b.v.length);
+ for(let i=0;i<n;i++){const x=a.v[i]||0,y=b.v[i]||0;if(x!==y)return x-y;}
+ return 0;
+}
+function estimateStrength(hole,community){
+ if(community.length===0){
+  const [a,b]=hole.map(c=>c.r).sort((x,y)=>y-x),suited=hole[0].s===hole[1].s,gap=a-b;
+  let s=.24+(a+b)/100;
+  if(a===b)s+=.28+(a-2)*.012;
+  if(a>=12&&b>=10)s+=.14;
+  if(suited)s+=.045;
+  if(gap===1)s+=.045;
+  if(gap>=4)s-=.07;
+  return Math.max(.12,Math.min(.78,s));
+ }
+ const all=[...hole,...community],hand=evaluate(all);
+ let strength=.18+hand.cat*.105;
+ const ranks=all.map(c=>c.r);
+ strength+=Math.min(.12,hand.v[0]/140);
+ // Potential flush and straight draws before the river.
+ if(community.length<5){
+  const suitCounts={S:0,H:0,D:0,C:0};
+  all.forEach(c=>suitCounts[c.s]++);
+  const maxSuit=Math.max(...Object.values(suitCounts));
+  if(maxSuit===4)strength+=.10;
+  if(maxSuit===3&&community.length>=3)strength+=.025;
+  const u=[...new Set(ranks)];
+  if(u.includes(14))u.push(1);
+  let near=0;
+  for(let start=1;start<=10;start++){
+   const window=[start,start+1,start+2,start+3,start+4];
+   const count=window.filter(r=>u.includes(r)).length;
+   if(count>=4)near=Math.max(near,count);
+  }
+  if(near>=4)strength+=.08;
+ }
+ if(community.length===3&&hand.cat===0)strength-=.025;
+ return Math.max(.08,Math.min(.97,strength));
+}
+
+$('checkCallBtn').addEventListener('click',playerCheckCall);
+$('raiseBtn').addEventListener('click',playerRaise);
+$('foldBtn').addEventListener('click',playerFold);
+$('dealBtn').addEventListener('click',startHand);
+$('betRange').addEventListener('input',updateBetLabel);
+document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>{
+ $('betRange').value=Math.min(Number($('betRange').max),Number($('betRange').value)+Number(b.dataset.add));
+ updateBetLabel();
+}));
+$('clearLogBtn').addEventListener('click',()=>{$('activityLog').innerHTML='';logEntries=[];});
+$('helpBtn').addEventListener('click',()=>$('modal').classList.remove('hidden'));
+$('closeHelp').addEventListener('click',()=>$('modal').classList.add('hidden'));
+$('closeHelp2').addEventListener('click',()=>$('modal').classList.add('hidden'));
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.add('hidden');});
+
+showCards('playerCards',[]);
+showCards('communityCards',[]);
+refresh();
+syncBetSlider();
+})();
+</script>
+</body>
+</html>
